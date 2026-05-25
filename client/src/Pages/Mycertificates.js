@@ -16,7 +16,7 @@ function MyCertificates() {
       return;
     }
     fetchCertificates();
-  }, []);
+  }, [fetchCertificates, navigate, token, user]);
 
   const fetchCertificates = async () => {
     try {

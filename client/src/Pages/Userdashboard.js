@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../axios";
 
@@ -73,7 +73,7 @@ function UserDashboard() {
       }
     };
     if (user) fetchAll(); else navigate("/login");
-  }, []);
+  }, [navigate,user]);
 
   const filtered = certificates.filter(cert => 
     cert.certificateId?.toLowerCase().includes(search.toLowerCase()) ||
