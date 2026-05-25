@@ -1,0 +1,160 @@
+/* register.css */
+
+.auth-wrapper {
+  background-color: #020612; /* Rich Space Black-Blue Backdrop */
+  min-height: 92vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+}
+
+/* 3D Multi-colored Glowing Orbs (Fluid Background) */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.15;
+  filter: blur(140px);
+}
+.orb-cyber-cyan {
+  top: 10%;
+  left: 20%;
+  width: 500px;
+  height: 500px;
+  background: #00f2fe;
+}
+.orb-cyber-purple {
+  bottom: 5%;
+  right: 15%;
+  width: 600px;
+  height: 600px;
+  background: #7209b7;
+}
+.orb-cyber-pink {
+  top: 40%;
+  left: 45%;
+  width: 400px;
+  height: 400px;
+  background: #ff0055;
+}
+
+/* Premium Sci-Fi Glassmorphism Card Style */
+.premium-glassmorphism {
+  background: linear-gradient(135deg, rgba(13, 24, 48, 0.7) 0%, rgba(7, 13, 28, 0.85) 100%) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 24px;
+  padding: 45px 40px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient Title Styling */
+.title-gradient {
+  background: linear-gradient(135deg, #ffffff 10%, #00f2fe 60%, #ff0055 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2.1rem;
+  letter-spacing: -0.5px;
+}
+
+.tracking-widest {
+  letter-spacing: 2px !important;
+  font-size: 0.72rem;
+}
+
+/* Advanced Interactive Neon Input Wrappers */
+.input-label-glow {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input-wrapper-neon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  font-size: 1.1rem;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.input-wrapper-neon input {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px;
+  padding: 14px 16px 14px 46px; /* Space added for left icons */
+  color: #ffffff !important;
+  width: 100%;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.input-wrapper-neon input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Input Focus Cyber Shift */
+.input-wrapper-neon input:focus {
+  border-color: #00f2fe !important;
+  background: rgba(0, 242, 254, 0.02) !important;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.15) !important;
+}
+
+.input-wrapper-neon input:focus + .input-icon,
+.input-wrapper-neon input:focus ~ .input-icon {
+  opacity: 1;
+}
+
+/* Multi-Layered Neon Holographic Button */
+.btn-holo-neon {
+  background: linear-gradient(135deg, #00f2fe 0%, #7209b7 50%, #ff0055 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 242, 254, 0.3);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.btn-holo-neon:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 30px rgba(0, 242, 254, 0.5),
+    0 0 40px rgba(255, 0, 85, 0.3);
+  letter-spacing: 1.5px;
+}
+
+/* Sign In redirection link styling */
+.login-link-neon {
+  color: #00f2fe !important;
+  border-bottom: 1px dashed rgba(0, 242, 254, 0.4);
+  padding-bottom: 2px;
+  transition: all 0.2s ease;
+}
+
+.login-link-neon:hover {
+  color: #ff0055 !important;
+  border-bottom-color: #ff0055;
+  text-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+}
