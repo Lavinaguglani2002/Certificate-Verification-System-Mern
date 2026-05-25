@@ -10,26 +10,22 @@ function MyCertificates() {
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    if (!user || !token) {
-      navigate("/login");
-      return;
-    }
-    fetchCertificates();
-  }, [fetchCertificates, navigate, token, user]);
-
+useEffect(() => {
   const fetchCertificates = async () => {
     try {
       setLoading(true);
+
       const res = await api.get(
         `user-certificates/${user.email.toLowerCase()}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
+
       setCertificates(res.data.certificates);
     } catch (error) {
       console.log("Error fetching certificates:", error);
+
       if (error.response && error.response.status === 403) {
         alert("Security Alert: Unauthorized access!");
         localStorage.clear();
@@ -40,6 +36,13 @@ function MyCertificates() {
     }
   };
 
+  if (!user || !token) {
+    navigate("/login");
+    return;
+  }
+
+  fetchCertificates();
+}, [navigate, token, user]);
   return (
     <div className="min-vh-100" style={{ background: "#f8fafc", paddingBottom: "50px" }}>
       {/* INLINE CSS FOR PREMIUM FEEL */}

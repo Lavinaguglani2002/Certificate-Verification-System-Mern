@@ -56,31 +56,40 @@ function UserDashboard() {
     }
   };
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        const res = await api.get(
-          `/user-certificates/${user.email}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setCertificates(res.data.certificates || []);
-      } catch (err) {
-        console.error("Fetch Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchAll(); else navigate("/login");
-  }, [navigate,user]);
+useEffect(() => {
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
 
-  const filtered = certificates.filter(cert => 
+      const token = localStorage.getItem("token");
+
+      const res = await api.get(
+        `/user-certificates/${user?.email}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setCertificates(res.data.certificates || []);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user || !localStorage.getItem("token")) {
+    navigate("/login");
+    return;
+  }
+
+  fetchAll();
+}, [navigate]); 
     cert.certificateId?.toLowerCase().includes(search.toLowerCase()) ||
     cert.courseName?.toLowerCase().includes(search.toLowerCase()) ||
     cert.studentName?.toLowerCase().includes(search.toLowerCase()) ||
     cert.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  
 
   return (
     <div className="min-vh-100 pb-5" style={{ backgroundColor: "#f3f6f9", fontFamily: "sans-serif", position: "relative" }}>
