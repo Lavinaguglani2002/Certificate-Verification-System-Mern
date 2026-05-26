@@ -101,54 +101,6 @@ const createCertificate = async (req, res) => {
   }
 };
 
-// ==========================================
-// 2. VERIFY CERTIFICATE
-// ==========================================
-// const verifyCertificate = async (req, res) => {
-//   try {
-//     const certificate = await Certificate.findOne({
-//       certificateId: req.params.id,
-//     });
-
-//     if (!certificate) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Certificate not found",
-//       });
-//     }
-
-//     // 🔐 SAFE CHECK (IMPORTANT)
-//     if (
-//       req.user.role !== "admin" &&
-//       certificate.email.toLowerCase() !== req.user.email.toLowerCase()
-//     ) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Access denied",
-//       });
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       certificate: {
-//         studentName: certificate.studentName,
-//         courseName: certificate.courseName,
-//         grade: certificate.grade,
-//         issueDate: certificate.issueDate,
-//         certificateId: certificate.certificateId,
-//         issuedBy: certificate.issuedBy,
-//         collegeName: certificate.collegeName,
-//         digitalSignature: certificate.digitalSignature,
-//       },
-//     });
-
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
 const verifyCertificate = async (req, res) => {
   try {
     const certificate = await Certificate.findOne({
@@ -305,6 +257,7 @@ const deleteCertificate = async (req, res) => {
 
 // 7. BULK UPLOAD
 // ==========================================
+
 const bulkUploadCertificates = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -312,7 +265,7 @@ const bulkUploadCertificates = async (req, res) => {
     }
 
     const { fileData } = req.body;
-    console.log("Backend received data count:", fileData?.length); // Debugging
+    console.log("Backend received data count:", fileData?.length);
 
     if (!fileData || !Array.isArray(fileData) || fileData.length === 0) {
       return res.status(400).json({ success: false, message: "Invalid or empty file" });
@@ -320,57 +273,75 @@ const bulkUploadCertificates = async (req, res) => {
 
     let uploaded = [];
     let skipped = [];
+    
+    // 1. Database hits kam karne ke liye Excel ke saare emails extract karein
+    const allEmails = fileData
+      .map(item => (item.email || item.Email || item["Student Email"])?.toLowerCase().trim())
+      .filter(Boolean);
 
+    // 2. Ek hi baar mein database se saare existing users aur certificates le aayein (Optimization)
+    const [registeredUsers, existingCertificates] = await Promise.all([
+      userModel.find({ email: { $in: allEmails } }).lean(),
+      Certificate.find({ email: { $in: allEmails } }).lean()
+    ]);
+
+    // Data maps banana taaki local lookups instantly ho sakein
+    const userMap = new Map(registeredUsers.map(u => [u.email.toLowerCase(), u.name]));
+    
+    // Set for fast composite key matching (email + '_' + courseName)
+    const certSet = new Set(existingCertificates.map(c => `${c.email.toLowerCase()}_${c.courseName.toLowerCase()}`));
+    const localNewCertSet = new Set(); // Prevent duplicates within the same uploaded Excel sheet
+
+    // 3. Data processing loop
     for (const item of fileData) {
-      // 1. Headers ko Normalize karein (Excel headers check)
+      // Normalize Headers
       const email = item.email || item.Email || item["Student Email"];
       const course = item.courseName || item["Course Name"] || item.Course;
       const sName = item.studentName || item["Student Name"] || item.Name;
 
       const cleanEmail = email?.toLowerCase().trim();
+      const cleanCourse = course?.trim();
 
-      // 2. Validation
-      if (!cleanEmail || !course) {
+      // Validation
+      if (!cleanEmail || !cleanCourse) {
         skipped.push({ email: email || "Unknown", reason: "Missing Email or Course Name" });
         continue;
       }
 
-      // 3. User Check (Bypass if not found but use name from Excel)
-      const registeredStudent = await userModel.findOne({ email: cleanEmail });
-      const finalName = registeredStudent ? registeredStudent.name : sName;
+      // User Check (Local lookup)
+      const finalName = userMap.get(cleanEmail) || sName;
 
       if (!finalName) {
         skipped.push({ email: cleanEmail, reason: "Student Name not found anywhere" });
         continue;
       }
 
-      // 4. Duplicate Check
-const existing = await Certificate.findOne({
-  email: cleanEmail,
-  courseName: item.courseName,
-});
+      // Duplicate Check (Local lookups - No DB calls inside loop!)
+      const uniqueCompositeKey = `${cleanEmail}_${cleanCourse.toLowerCase()}`;
+      
+      if (certSet.has(uniqueCompositeKey) || localNewCertSet.has(uniqueCompositeKey)) {
+        skipped.push({
+          email: cleanEmail,
+          reason: `Certificate already exists for course: ${cleanCourse}`,
+        });
+        continue; 
+      }
 
-if (existing) {
-  skipped.push({
-    email: cleanEmail,
-    reason: "Certificate already exists",
-  });
-  continue; 
-}
-      // 5. Generate ID & Signature
+      // Generate ID & Signature
       const year = new Date().getFullYear().toString().slice(-2);
       const certId = `LAV-${year}${Math.floor(100000 + Math.random() * 900000)}`;
       
       const digitalSignature = crypto
         .createHash("sha256")
-        .update(cleanEmail + course + certId)
-        .digest("hex").substring(0, 16);
+        .update(cleanEmail + cleanCourse + certId)
+        .digest("hex")
+        .substring(0, 16);
 
-      // 6. Save to Database
-      const cert = await Certificate.create({
+      // Save structured object to temporary array
+      uploaded.push({
         studentName: finalName,
         email: cleanEmail,
-        courseName: course,
+        courseName: cleanCourse,
         grade: item.grade || "A+",
         issueDate: item.issueDate || new Date(),
         certificateId: certId,
@@ -379,13 +350,20 @@ if (existing) {
         collegeName: item.collegeName || "Lavinova Institute",
       });
 
-      uploaded.push(cert);
+      // Maintain internal checklist state
+      localNewCertSet.add(uniqueCompositeKey);
+    }
+
+    // 4. Batch Save to MongoDB Atlas (Single Network Request!)
+    let savedCertificates = [];
+    if (uploaded.length > 0) {
+      savedCertificates = await Certificate.insertMany(uploaded);
     }
 
     res.status(200).json({
       success: true,
-      message: `${uploaded.length} certificates uploaded successfully`,
-      uploadedCount: uploaded.length,
+      message: `${savedCertificates.length} certificates uploaded successfully`,
+      uploadedCount: savedCertificates.length,
       skippedCount: skipped.length,
       skipped
     });
@@ -394,7 +372,10 @@ if (existing) {
     console.error("Bulk Upload Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
-};module.exports = {
+};
+
+
+module.exports = {
   createCertificate,
   verifyCertificate,
   getAllCertificates,

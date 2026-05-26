@@ -19,23 +19,27 @@ const BulkUpload = () => {
           const workbook = XLSX.read(data, { type: "array" });
           const sheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
-// Isse headers sahi milenge kyunki humne pehli 2 rows skip ki hain
-const json = XLSX.utils.sheet_to_json(sheet, { range: 2 }); 
 
-const formattedData = json.map((row) => ({
-  email: (row.email || "").toString().toLowerCase().trim(),
-  courseName: row.courseName || "",
-  studentName: row.studentName || "Student", // Aapki excel mein studentName missing hai, add it!
-  grade: row.grade || "A+",
-  collegeName: row.collegeName || "Lavinova Institute",
-  issuedBy: row.issuedBy || "Admin",
-  issueDate: row.issueDate || new Date()
-}));
-          // 2. DATA FORMATTING (Mapping Excel headers to Backend keys)
+          // Dynamic parsing checking rows safely
+const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+          if (!json || json.length === 0) {
+            alert("Excel sheet contains no data on row offset index.");
+            setLoading(false);
+            return;
+          }
+
+          const formattedData = json.map((row) => ({
+            email: (row.email || row.Email || row["Student Email"] || "").toString().toLowerCase().trim(),
+            courseName: (row.courseName || row["Course Name"] || row.Course || "").toString().trim(),
+            studentName: (row.studentName || row["Student Name"] || row.Name || "").toString().trim(),
+            grade: (row.grade || "A+").toString().trim(),
+            collegeName: (row.collegeName || "Lavinova Institute").toString().trim(),
+            issuedBy: (row.issuedBy || "Admin").toString().trim(),
+            issueDate: row.issueDate ? new Date(row.issueDate) : new Date()
+          }));
 
           console.log("Formatted Data to send:", formattedData);
 
-          // 3. TOKEN & API CALL
           const token = localStorage.getItem("token");
           const res = await api.post(
             "/bulk-upload",
@@ -47,11 +51,8 @@ const formattedData = json.map((row) => ({
             }
           );
 
-          // 4. SUCCESS RESPONSE
           alert(res.data.message);
           console.log("Server Response:", res.data);
-          
-          // Reset input field
           e.target.value = ""; 
 
         } catch (error) {
@@ -97,7 +98,7 @@ const formattedData = json.map((row) => ({
       
       <div className="mt-3 p-2 bg-light rounded-3 border">
         <small className="text-muted d-block" style={{ fontSize: '10px' }}>
-          <strong>Excel Columns required:</strong> email, courseName, studentName (optional: grade)
+          <strong>Excel Columns required (Row index 3):</strong> email, courseName, studentName
         </small>
       </div>
     </div>

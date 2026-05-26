@@ -41,7 +41,6 @@ function App() {
         <Route path="/verify-certificate" element={<VerifyCertificate />} />
         <Route path="/verify-certificate/:id" element={<VerifyCertificate />} />
 
-        {/* PUBLIC VIEW */}
         <Route path="/certificate-view" element={<CertificateView />} />
       </Routes>
     </BrowserRouter>
